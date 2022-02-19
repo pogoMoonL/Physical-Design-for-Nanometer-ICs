@@ -345,10 +345,13 @@ void my_main(int argc, char** argv) {
 
 
 }
+// argc: argv counter , argv: argv vector
 int main(int argc, char** argv) {
   ios_base::sync_with_stdio(false);
 
   // srand : 利用 time 當成 seed 再利用 srand 就可以產生每次不同的randon number
   srand(time(NULL));
+
+  // argv :  <Alpha> <Input_block> <Input_nets> <Output_rpt_file> [--plot]
   my_main(argc, argv);
 }
