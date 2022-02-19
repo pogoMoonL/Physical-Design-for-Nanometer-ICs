@@ -42,13 +42,17 @@ public:
     : _fp(fp), _Nblcks(Nblcks), _N(Nblcks), _R(R), _best_sol(fp.get_tree()), 
       _alpha_base(alpha_base), _alpha(alpha_base), _N_feas(0),
       _beta(beta), _W(W), _H(H), _true_alpha(stof(argv[1])), _plot(plot) {
+
     _fp.init();
+
     vector<int3> costs(_N+1);
+
     costs[0] = _fp.cost();
     _avg_r = float(get<2>(costs[0]))/get<1>(costs[0]);
     _avg_hpwl = get<0>(costs[0])/2.;
     _avg_area = get<1>(costs[0])*get<2>(costs[0]);
     _avg_true = _true_alpha*_avg_area + (1-_true_alpha)*_avg_hpwl;
+
     for(ID i = 1; i<=_N; ++i) {
       _fp.perturb();
       _fp.init();
@@ -148,6 +152,7 @@ public:
     float _init_T2 = _init_T / 50;
     int reset_th = 2*_Nblcks, stop_th = 9*_Nblcks, reset_cnt = 0;
     int iter = 1, tot_feas = 0, rej_num = 0, cnt = 1;
+
     _fp.init();
     float _T = _init_T2, prv_cost = true_cost(_fp.cost(), _avg_true);
     _best_cost = prv_cost;
@@ -236,7 +241,10 @@ private:
   bool feas(const int3& cost) {
     return (get<1>(cost) <= _W && get<2>(cost) <= _H);
   }
+
   FLOOR_PLAN<ID, LEN>& _fp;
+
+
   typename FLOOR_PLAN<ID, LEN>::TREE _best_sol;
   float _best_cost;
   const ID _Nblcks, _N;
@@ -250,26 +258,31 @@ private:
   clock_t tt;
 };
 void my_main(int argc, char** argv) {
+
   ifstream fblcks(argv[2], ifstream::in);
   ifstream fnets(argv[3], ifstream::in);
   ofstream outs(argv[4], ifstream::out);
   int Nnets, W, H, Nblcks, Ntrmns;
+
   string ign;
   fnets >> ign >> Nnets;
   fblcks >> ign >> W >> H;
   fblcks >> ign >> Nblcks;
   fblcks >> ign >> Ntrmns;
+
   float P = 0.9, alpha_base = 0.5, beta = 0.1, R = float(H)/W;
   int k = max(2, Nblcks/11), rnd = 2*Nblcks+20;
   float c = max(100-int(Nblcks), 10), costs[2];
   bool plot = (argc > 5 && !strcmp(argv[5], "--plot"));
   bool use_char = (Nblcks+Ntrmns+2) < CHAR_MAX;
   bool use_short = (max(W, H)<<4) < SHRT_MAX;
+
   if(use_char && use_short) {
-    auto fp =
-      FLOOR_PLAN<char,short>(fnets, fblcks, argv, Nnets, Nblcks, Ntrmns, W, H);
-    auto sa =
-      SA<char, short>(fp, argv, Nblcks, W, H, R, P, alpha_base, beta, plot); 
+
+
+    auto fp = FLOOR_PLAN<char,short>(fnets, fblcks, argv, Nnets, Nblcks, Ntrmns, W, H);
+    auto sa = SA<char, short>(fp, argv, Nblcks, W, H, R, P, alpha_base, beta, plot);
+
     FLOOR_PLAN<char, short>::TREE trees[2];
     for(int i = 0; i<2; ++i) {
       sa.run(k, rnd, c);
@@ -277,22 +290,28 @@ void my_main(int argc, char** argv) {
     }
     fp.restore(costs[0]<costs[1] ? trees[0] : trees[1]);
     fp.init();
+
     if(plot) fp.plot();
     fp.output(outs);
+
   } else if(use_char && !use_short) {
-    auto fp =
-      FLOOR_PLAN<char, int>(fnets, fblcks, argv, Nnets, Nblcks, Ntrmns, W, H);
-    auto sa = 
-      SA<char, int>(fp, argv, Nblcks, W, H, R, P, alpha_base, beta, plot); 
+
+    auto fp = FLOOR_PLAN<char, int>(fnets, fblcks, argv, Nnets, Nblcks, Ntrmns, W, H);
+    auto sa =  SA<char, int>(fp, argv, Nblcks, W, H, R, P, alpha_base, beta, plot); 
+
     FLOOR_PLAN<char, int>::TREE trees[2];
     for(int i = 0; i<2; ++i) {
       sa.run(k, rnd, c);
       tie(costs[i], trees[i]) = sa.run2(k, rnd, c);
     }
+
     fp.restore(costs[0]<costs[1] ? trees[0] : trees[1]);
     fp.init();
+
     if(plot) fp.plot();
+
     fp.output(outs);
+
   } else if(!use_char && use_short) {
     auto fp =
       FLOOR_PLAN<short, short>(fnets, fblcks, argv, Nnets, Nblcks, Ntrmns, W, H);
@@ -323,9 +342,13 @@ void my_main(int argc, char** argv) {
     fp.output(outs);
   }
   outs.close();
+
+
 }
 int main(int argc, char** argv) {
   ios_base::sync_with_stdio(false);
+
+  // srand : 利用 time 當成 seed 再利用 srand 就可以產生每次不同的randon number
   srand(time(NULL));
   my_main(argc, argv);
 }
